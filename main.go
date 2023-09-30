@@ -41,6 +41,7 @@ func main() {
 		return
 	}
 
+	// TODO: use a pool to limit the number of concurrent connections
 	wg := sync.WaitGroup{}
 	wg.Add(len(hostConfs))
 	for _, host := range hostConfs {
