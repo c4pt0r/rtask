@@ -1,6 +1,6 @@
 module github.com/c4pt0r/rtask
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/mitchellh/go-homedir v1.1.0
