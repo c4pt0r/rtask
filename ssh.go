@@ -35,8 +35,6 @@ func NewHostConn(hostConfig *HostConfig) *HostConn {
 	return c
 }
 
-type contextKey string
-
 func now() string {
 	now := time.Now()
 	return now.Format("2006-01-02 15:04:05")
@@ -46,7 +44,7 @@ func (c *HostConn) Exec(t *Task) error {
 	var err error
 	// build context
 
-	ctx := context.WithValue(context.Background(), contextKey("context"), c.hostConfig.Context)
+	ctx := context.WithValue(context.Background(), "context", c.hostConfig.Context)
 	cmd, err := t.GetCommand(ctx)
 	if err != nil {
 		return err
