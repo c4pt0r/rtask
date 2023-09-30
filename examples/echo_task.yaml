@@ -1,0 +1,9 @@
+name: "simple echo and sleep" 
+type: "exec"
+exec:
+  cmd: |
+    echo "read context from inventory.yaml for different nodes"
+    echo Hello on {{ .HOSTNAME }} > /tmp/hello
+    echo "start sleeping..."
+    sleep {{ .SLEEP }}
+    

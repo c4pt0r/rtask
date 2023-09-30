@@ -1,0 +1,14 @@
+- host: "node1"
+  port: 22
+  timeout: 10
+  context:
+    HOSTNAME: "node1"
+    SLEEP: "3"
+
+- host: "node2"
+  port: 22
+  timeout: 10 
+  context:
+    HOSTNAME: "node2"
+    SLEEP: "5"
+
