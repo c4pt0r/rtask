@@ -49,33 +49,41 @@ func (c *HostConn) Exec(t *Task) error {
 	if err != nil {
 		return err
 	}
-	c.stdoutChan, c.stderrChan, c.doneChan, c.errChan, err = c.ssh.Stream(cmd, time.Duration(c.hostConfig.Timeout)*time.Second)
+	timeout := time.Duration(c.hostConfig.Timeout) * time.Second
+	if t.Timeout > 0 {
+		timeout = time.Duration(t.Timeout) * time.Second
+	}
+	c.stdoutChan, c.stderrChan, c.doneChan, c.errChan, err = c.ssh.Stream(cmd, timeout)
+
 	// Handle errors
 	if err != nil {
 		return err
 	} else {
+		if *verbose {
+			fmt.Printf("[%s@%s | START_RUN_CMD | %s] %s\n", c.hostConfig.SshConfig.SshUser, c.hostConfig.Host, now(), cmd)
+		}
 		// read from the output channel until the done signal is passed
 		isTimeout := true
 	loop:
 		for {
 			select {
 			case isTimeout = <-c.doneChan:
-				fmt.Printf("[%s | FINISHED | %s]\n", c.hostConfig.Host, now())
+				fmt.Printf("[%s@%s | FINISHED | %s]\n", c.hostConfig.SshConfig.SshUser, c.hostConfig.Host, now())
 				break loop
 			case outline := <-c.stdoutChan:
 				if outline != "" {
-					fmt.Printf("[%s | STDOUT | %s] %s\n", c.hostConfig.Host, now(), outline)
+					fmt.Printf("[%s@%s | STDOUT | %s] %s\n", c.hostConfig.SshConfig.SshUser, c.hostConfig.Host, now(), outline)
 				}
 			case errline := <-c.stderrChan:
 				if errline != "" {
-					fmt.Printf("[%s | STDERR | %s] %s\n", c.hostConfig.Host, now(), errline)
+					fmt.Printf("[%s@%s | STDERR | %s] %s\n", c.hostConfig.SshConfig.SshUser, c.hostConfig.Host, now(), errline)
 				}
 			case err = <-c.errChan:
 			}
 		}
 		// get exit code or command error.
 		if err != nil {
-			fmt.Printf("[%s | ERR | %s] %s\n", c.hostConfig.Host, now(), err.Error())
+			fmt.Printf("[%s@%s | ERR | %s] %s\n", c.hostConfig.SshConfig.SshUser, c.hostConfig.Host, now(), err.Error())
 		}
 
 		// command time out

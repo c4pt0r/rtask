@@ -13,14 +13,13 @@ import (
 type Config struct {
 	SshKeyPath  string `yaml:"ssh_key_path"`
 	SshUser     string `yaml:"ssh_user"`
-	AsUser      string `yaml:"as_user"`
 	SshPassword string `yaml:"ssh_password"`
 }
 
 type HostConfig struct {
 	Host    string            `yaml:"host"`
 	Port    int               `yaml:"port"`
-	Timeout int               `yaml:"timeout"`
+	Timeout int               `yaml:"timeout"` // seconds
 	Context map[string]string `yaml:"context"`
 	// defualt config is global config
 	SshConfig Config `yaml:"ssh_config"`
@@ -37,7 +36,10 @@ var (
 
 // read global config from cli parameter
 var (
-	configFilePath = flag.String("config", "", "config file path")
+	configFilePath = flag.String("c", "", "config file path")
+	sshKeyPath     = flag.String("ssh-key-path", "", "ssh key path")
+	sshUser        = flag.String("ssh-user", "root", "ssh user")
+	sshPwd         = flag.String("ssh-password", "", "ssh password")
 )
 
 func readGlobalConfigFromCLI() {
@@ -46,22 +48,16 @@ func readGlobalConfigFromCLI() {
 		if err != nil {
 			ErrAndExit(1, err)
 		}
-		sshPath := path.Join(home, ".ssh/id_rsa")
-		globalConfig.SshKeyPath = *flag.String("ssh-key-path", sshPath, "ssh key path")
-	}
-	if globalConfig.AsUser == "" {
-		// get current username
-		currentUser := os.Getenv("USER")
-		if currentUser == "" {
-			currentUser = "root"
+		if *sshKeyPath == "" {
+			*sshKeyPath = path.Join(home, ".ssh/id_rsa")
 		}
-		globalConfig.AsUser = *flag.String("as-user", currentUser, "ssh user")
+		globalConfig.SshKeyPath = *sshKeyPath
 	}
 	if globalConfig.SshUser == "" {
-		globalConfig.SshUser = *flag.String("ssh-user", "root", "ssh user")
+		globalConfig.SshUser = *sshUser
 	}
 	if globalConfig.SshPassword == "" {
-		globalConfig.SshPassword = *flag.String("ssh-password", "", "ssh password")
+		globalConfig.SshPassword = *sshPwd
 	}
 }
 
@@ -104,6 +100,12 @@ func ReadHostConfigFromYaml(inventoryFilePath string) []*HostConfig {
 	}
 	// make sure every host has a ssh config
 	for _, hostConfig := range ret {
+		if hostConfig.Port == 0 {
+			hostConfig.Port = 22
+		}
+		if hostConfig.Timeout == 0 {
+			hostConfig.Timeout = 10
+		}
 		if hostConfig.SshConfig.SshKeyPath == "" {
 			hostConfig.SshConfig.SshKeyPath = globalConfig.SshKeyPath
 		}

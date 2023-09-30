@@ -22,6 +22,8 @@ type Task struct {
 	ExecTask struct {
 		Cmd string `yaml:"cmd"`
 	} `yaml:"exec"`
+
+	Timeout int `yaml:"timeout"` // seconds
 }
 
 func (t *Task) IsExecTask() bool {

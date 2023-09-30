@@ -3,15 +3,21 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
+	"sync"
+)
+
+var (
+	verbose = flag.Bool("v", false, "verbose")
 )
 
 // errandexit
 func ErrAndExit(code int, err error) {
-	panic(err)
+	log.Fatal(err)
 }
 
 var (
-	taskFile = flag.String("task", "", "task file path")
+	taskFile = flag.String("t", "", "task file path")
 )
 
 func main() {
@@ -23,8 +29,10 @@ func main() {
 
 	// load inventory file
 	hostConfs := ReadHostConfigFromYaml(*inventoryFilePath)
-	for _, host := range hostConfs {
-		fmt.Println(host)
+	if verbose != nil && *verbose {
+		for _, host := range hostConfs {
+			fmt.Println(host)
+		}
 	}
 
 	t, err := LoadTask(*taskFile)
@@ -32,11 +40,18 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(len(hostConfs))
 	for _, host := range hostConfs {
-		hostConn := NewHostConn(host)
-		err = hostConn.Exec(t)
-		if err != nil {
-			fmt.Println(err)
-		}
+		go func(host *HostConfig) {
+			hostConn := NewHostConn(host)
+			err = hostConn.Exec(t)
+			if err != nil {
+				fmt.Println(err)
+			}
+			wg.Done()
+		}(host)
 	}
+	wg.Wait()
 }
