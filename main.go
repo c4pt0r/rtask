@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"sync"
 )
 
@@ -20,8 +21,69 @@ var (
 	taskFile = flag.String("t", "", "task file path")
 )
 
+var (
+	printSampleTask        = flag.Bool("print-sample-task", false, "print sample task file")
+	sampleTaskFile  string = `name: "simple echo and sleep" 
+type: "exec"
+exec:
+  cmd: |
+    echo "read context from inventory.yaml for different nodes"
+    echo Hello on {{ .HOSTNAME }} > /tmp/hello_from_rsync
+    echo "start sleeping..."
+    sleep {{ .SLEEP }}`
+
+	printSampleInventory        = flag.Bool("print-sample-inventory", false, "print sample inventory file")
+	sampleInventoryFile  string = `- host: "node1"
+  port: 22
+  timeout: 10
+  context:
+    HOSTNAME: "node1"
+    SLEEP: "3"
+
+- host: "node2"
+  port: 22
+  timeout: 10 
+  context:
+    HOSTNAME: "node2"
+    SLEEP: "5"
+`
+	printSampleConfig        = flag.Bool("print-sample-config", false, "print sample config file")
+	sampleConfigFile  string = `ssh_key_path: "/home/root/.ssh/id_rsa"
+ssh_user: "root"`
+)
+
+func doPrintSampleTaskFile() {
+	fmt.Println(sampleTaskFile)
+}
+
+func doPrintSampleInventoryFile() {
+	fmt.Println(sampleInventoryFile)
+}
+
+func doPrintSampleConfigFile() {
+	fmt.Println(sampleConfigFile)
+}
+
+func printSample() {
+	if *printSampleTask {
+		doPrintSampleTaskFile()
+		os.Exit(0)
+	}
+	if *printSampleInventory {
+		doPrintSampleInventoryFile()
+		os.Exit(0)
+	}
+	if *printSampleConfig {
+		doPrintSampleConfigFile()
+		os.Exit(0)
+	}
+	return
+}
+
 func main() {
 	flag.Parse()
+	printSample()
+
 	// global config from yaml file
 	readGlobalConfigFromYaml(*configFilePath)
 	// override global config from cli parameter
